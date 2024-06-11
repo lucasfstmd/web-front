@@ -146,8 +146,8 @@ class AppBarComponent extends Component<IProps, IState> {
                 )
             }
             sx={{
-                background: theme.palette.primary.main,
-                color: theme.palette.background.paper
+                background: 'transparent',
+                color: 'transparent'
             }}>
 
             <Toolbar variant="dense">
@@ -161,14 +161,14 @@ class AppBarComponent extends Component<IProps, IState> {
                             edge="start"
                             onClick={drawerToggleDesktop}
                             className={classes.menuButton}>
-                            <MenuIcon/>
+                            <MenuIcon color="disabled" style={{ color: theme.palette.primary.main }}/>
                         </IconButton>
                     </Box>
                 </Box>
 
                 <Typography variant="h6" className={classes.title} noWrap={true}/>
 
-                <ThemeButton color={theme.palette.background.paper}/>
+                <ThemeButton color={theme.palette.primary.main}/>
 
                 <Box display="flex" justifyContent="center" alignItems="center">
 
@@ -190,7 +190,7 @@ class AppBarComponent extends Component<IProps, IState> {
                                     style={{ width: '20px', height: '20px' }}
                                     alt={`${t('DEFAULT.AVATAR')}`}/>
                                 :
-                                <AccountCircle color="disabled" style={{ color: theme.palette.background.paper }}/>
+                                <AccountCircle color="disabled" style={{ color: theme.palette.primary.main }}/>
                         }>
                         {/* The username in the appbar */}
                         {username || '...'}

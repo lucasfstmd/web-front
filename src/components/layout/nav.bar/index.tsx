@@ -1,54 +1,30 @@
-import React, { Component, ForwardedRef, forwardRef } from 'react'
+import React, { Component } from 'react'
 
 import { WithTranslation, withTranslation } from 'react-i18next'
-import { Link, NavLink } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import {
     BottomNavigation,
     BottomNavigationAction,
-    Box,
+    Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle,
     Drawer,
-    Grid,
     List,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
     Theme,
-    Tooltip
+    Typography
 } from '@mui/material'
-import { createStyles, makeStyles, WithStyles, withStyles } from '@mui/styles'
-import { Dashboard, Home, Menu } from '@mui/icons-material'
+import { createStyles, WithStyles, withStyles } from '@mui/styles'
+import { Delete, DriveFolderUpload, AccountCircle } from '@mui/icons-material'
 import { ThemeMode } from '../../../material.theme'
-
-import LogoLight from '../../../assets/imgs/logo_light.png'
-import LogoDark from '../../../assets/imgs/logo_dark.png'
+import axiosInstance from '../../../services/axios'
 
 import { IComponentRouter, withRouter } from '../../with.router'
-import clsx from 'clsx'
-
-const navLinkStyle = makeStyles((theme: Theme) => ({
-    active: {
-        backgroundColor: `${theme.palette.primary.main} !important`,
-        color: `#FFFFFF !important`,
-        '& svg': {
-            color: `#FFFFFF !important`
-        }
-    }
-}))
-
-const CustomNavLink = forwardRef((props: any, ref: ForwardedRef<any>) => {
-    const style = navLinkStyle()
-    return <NavLink
-        ref={ref}
-        {...props}
-        className={({ isActive }) => clsx(props.className, { [style.active]: isActive })}/>
-})
+import { useDropzone } from 'react-dropzone'
 
 export const DRAWER_WIDTH = 220
 
 const NavBarStyle = (theme: Theme) => createStyles({
     root: {
-        backgroundColor: theme.palette.background.paper
+        backgroundColor: theme.palette.primary.main
     },
     drawer: {
         [theme.breakpoints.up('lg')]: {
@@ -56,14 +32,6 @@ const NavBarStyle = (theme: Theme) => createStyles({
             flexShrink: 0
         },
         transition: '.2s all'
-    },
-    drawerLogo: {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        width: 220,
-        height: 65,
-        padding: theme.spacing(2)
     },
     drawerPaper: {
         width: DRAWER_WIDTH,
@@ -91,7 +59,7 @@ const NavBarStyle = (theme: Theme) => createStyles({
         },
         '&::-webkit-scrollbar-thumb': {
             borderRadius: '5px',
-            backgroundColor: theme.palette.text.primary
+            backgroundColor: theme.palette.secondary.main
         }
     },
     listItemButton: {
@@ -102,6 +70,74 @@ const NavBarStyle = (theme: Theme) => createStyles({
         borderRadius: `5px !important`
     }
 })
+
+const FileUpload = ({ submit, openDialog, setOpenDialog }) => {
+    const [uploadedFiles, setUploadedFiles] = React.useState([])
+    const { getRootProps, getInputProps } = useDropzone({
+        onDrop: (acceptedFiles) => {
+            // @ts-ignore
+            setUploadedFiles(acceptedFiles)
+        },
+    })
+
+    const handleSubmit = () => {
+        submit(uploadedFiles)
+        setOpenDialog(false)
+    }
+
+    return (
+        <Dialog
+            open={openDialog}
+            onClose={() => setOpenDialog(false)}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+        >
+            <DialogTitle id="alert-dialog-title">
+                {"Escolha o Arquivo"}
+            </DialogTitle>
+            <DialogContent>
+                <DialogContentText id="alert-dialog-description">
+                    <Box
+                        display={'flex'}
+                        justifyContent={'center'}
+                        alignItems={'center'}
+                        style={{
+                            width: '30vw',
+                            height: '100%',
+                            backgroundColor: '#F8F8F8'
+                        }}
+                    >
+                        <div {...getRootProps()}>
+                            <input {...getInputProps()} />
+                            <p>Clique aqui ou arraste os Arquivos para cá.</p>
+                            <ul>
+                                {uploadedFiles.map((file: any) => (
+                                    <li key={file.name}>{file.name}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    </Box>
+                </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+                <Button
+                    variant={'contained'}
+                    color={'error'}
+                    onClick={() => setOpenDialog(false)}
+                >
+                    Fechar
+                </Button>
+                <Button
+                    variant={'contained'}
+                    color={'secondary'}
+                    onClick={handleSubmit}
+                >
+                    Salvar
+                </Button>
+            </DialogActions>
+        </Dialog>
+    )
+}
 
 /**
  * @private
@@ -123,6 +159,10 @@ interface Props extends WithStyles<typeof NavBarStyle, true> {
 
 type IProps = Props & WithTranslation & IComponentRouter
 
+interface IState {
+    readonly upload: boolean
+}
+
 /**
  * Component that renders the application drawer, responsible for the visibility of the system's navigation menu.
  * @component
@@ -134,7 +174,18 @@ type IProps = Props & WithTranslation & IComponentRouter
  * @property {function} drawerToggle Function that triggers the visibility of the drawer
  * @property {function} closeMobileView
  */
-class NavBar extends Component<IProps> {
+class NavBar extends Component<IProps, IState> {
+
+    constructor(props: IProps) {
+        super(props)
+
+        this.state = {
+            upload: false
+        }
+
+        this.handleSubmit = this.handleSubmit.bind(this)
+        this.setUploadDialog = this.setUploadDialog.bind(this)
+    }
 
     /**
      * Render method.
@@ -145,62 +196,50 @@ class NavBar extends Component<IProps> {
     public render() {
 
         const {
-            t,
             classes,
             desktopOpen,
-            closeMobileView,
-            themeMode,
+            theme,
             location: { pathname },
             navigate
         } = this.props
 
+        const {
+            upload
+        } = this.state
+
         const drawer = (
             <Box display="flex" flexDirection="column" className={classes.root}>
-                <Box className={classes.toolbar}>
-                    <Grid container={true} justifyContent="center">
-                        <Tooltip title={`${t('DRAWER.HOME')}`} arrow={true}>
-                            <Box className={classes.drawerLogo}>
-                                <Link id="link_to_home_page" to="/" onClick={closeMobileView}>
-                                    <img
-                                        src={themeMode === ThemeMode.LIGHT ? LogoLight : LogoDark}
-                                        alt="Logo"/>
-                                </Link>
-                            </Box>
-                        </Tooltip>
-                    </Grid>
-                </Box>
                 <List id="list_nav_bar_menu" className={classes.list}>
+                    <Link to={'#'}
+                          style={{ textDecoration: 'none' }}
+                          className={classes.listItemButton}
+                          onClick={() => this.setState({ upload: true })}
+                    >
+                        <Box display={'flex'} justifyContent={'center'} flexDirection={'column'} alignItems={'center'}>
+                            <DriveFolderUpload sx={{ fontSize: 80 }} style={{ color: theme.palette.secondary.main }}/>
+                            <Typography variant={'h5'} style={{ color: theme.palette.secondary.main }}>
+                                Upload
+                            </Typography>
+                        </Box>
+                    </Link>
 
-                    <ListItemButton
-                        id="list_item_home"
-                        component={CustomNavLink}
-                        to="/app/home"
-                        onClick={closeMobileView}
-                        className={classes.listItemButton}>
-                        <ListItemIcon className={classes.listItemIcon}><Home/></ListItemIcon>
-                        <ListItemText primary={t('DRAWER.HOME')}/>
-                    </ListItemButton>
+                    <Link to={'/app/home'} style={{ textDecoration: 'none' }} className={classes.listItemButton}>
+                        <Box display={'flex'} justifyContent={'center'} flexDirection={'column'} alignItems={'center'}>
+                            <AccountCircle sx={{ fontSize: 80 }} style={{ color: theme.palette.secondary.main }}/>
+                            <Typography variant={'h5'} style={{ color: theme.palette.secondary.main }}>
+                                Perfil
+                            </Typography>
+                        </Box>
+                    </Link>
 
-                    <ListItemButton
-                        id="list_item_home"
-                        component={CustomNavLink}
-                        to="/app/menu1"
-                        onClick={closeMobileView}
-                        className={classes.listItemButton}>
-                        <ListItemIcon className={classes.listItemIcon}><Menu/></ListItemIcon>
-                        <ListItemText primary={t('DRAWER.MENU1')}/>
-                    </ListItemButton>
-
-                    <ListItemButton
-                        id="list_item_home"
-                        component={CustomNavLink}
-                        to="/app/menu2"
-                        onClick={closeMobileView}
-                        className={classes.listItemButton}>
-                        <ListItemIcon className={classes.listItemIcon}><Dashboard/></ListItemIcon>
-                        <ListItemText primary={t('DRAWER.MENU2')}/>
-                    </ListItemButton>
-
+                    <Link to={'/app/home'} style={{ textDecoration: 'none' }} className={classes.listItemButton}>
+                        <Box display={'flex'} justifyContent={'center'} flexDirection={'column'} alignItems={'center'}>
+                            <Delete sx={{ fontSize: 80 }} style={{ color: theme.palette.red.main }}/>
+                            <Typography variant={'h5'} style={{ color: theme.palette.red.main }}>
+                                Lixeira
+                            </Typography>
+                        </Box>
+                    </Link>
                 </List>
             </Box>
         )
@@ -218,9 +257,9 @@ class NavBar extends Component<IProps> {
                     sx={{ width: '95%', height: '40px' }}
                     value={value}
                     onChange={(e: any, newValue: string) => navigate(`/app/${newValue}`)}>
-                    <BottomNavigationAction value="home" icon={<Home/>}/>
-                    <BottomNavigationAction value="menu1" icon={<Menu/>}/>
-                    <BottomNavigationAction value="menu2" icon={<Dashboard/>}/>
+                    <BottomNavigationAction value="home" icon={<DriveFolderUpload/>}/>
+                    <BottomNavigationAction value="menu1" icon={<AccountCircle/>}/>
+                    <BottomNavigationAction value="menu2" icon={<Delete/>}/>
                 </BottomNavigation>
             </Box>
 
@@ -236,10 +275,31 @@ class NavBar extends Component<IProps> {
                     </Drawer>
                 </nav>
             </Box>
-
-
+            <FileUpload submit={this.handleSubmit} openDialog={upload} setOpenDialog={this.setUploadDialog}/>
         </React.Fragment>
+    }
 
+    private handleSubmit(files: any) {
+        const formData = new FormData()
+
+        for (const file of files) {
+            formData.append("files", file)
+        }
+
+        axiosInstance.post(
+            `v1/files/upload/666863849c214cfe65dd210d`,
+            formData,
+            {
+                headers: {
+                    "Content-type": "multipart/form-data",
+                }
+            }
+        ).then((res) => console.log('sucess'))
+            .catch((err) => console.log('error'))
+    }
+
+    private setUploadDialog(open: boolean) {
+        this.setState({ upload: open })
     }
 }
 
