@@ -15,10 +15,13 @@ import {
 import { createStyles, WithStyles, withStyles } from '@mui/styles'
 import { Delete, DriveFolderUpload, AccountCircle } from '@mui/icons-material'
 import { ThemeMode } from '../../../material.theme'
-import axiosInstance from '../../../services/axios'
 
 import { IComponentRouter, withRouter } from '../../with.router'
 import { useDropzone } from 'react-dropzone'
+import { ApplicationState } from '../../../store/root.types'
+import { LayoutActions } from '../../../store/layout'
+import { DirectoryActions } from '../../../store/directory'
+import { connect } from 'react-redux'
 
 export const DRAWER_WIDTH = 220
 
@@ -151,6 +154,11 @@ interface Props extends WithStyles<typeof NavBarStyle, true> {
     readonly mobileOpen: boolean
     readonly desktopOpen: boolean
     readonly themeMode: ThemeMode
+    readonly currentDirectory: string
+
+    uploadRequest(props: any): void
+
+    getDirectory(props: any): void
 
     drawerToggle(): void
 
@@ -174,7 +182,7 @@ interface IState {
  * @property {function} drawerToggle Function that triggers the visibility of the drawer
  * @property {function} closeMobileView
  */
-class NavBar extends Component<IProps, IState> {
+class NavBarComponent extends Component<IProps, IState> {
 
     constructor(props: IProps) {
         super(props)
@@ -202,7 +210,7 @@ class NavBar extends Component<IProps, IState> {
             location: { pathname },
             navigate
         } = this.props
-
+        
         const {
             upload
         } = this.state
@@ -280,22 +288,8 @@ class NavBar extends Component<IProps, IState> {
     }
 
     private handleSubmit(files: any) {
-        const formData = new FormData()
-
-        for (const file of files) {
-            formData.append("files", file)
-        }
-
-        axiosInstance.post(
-            `v1/files/upload/666863849c214cfe65dd210d`,
-            formData,
-            {
-                headers: {
-                    "Content-type": "multipart/form-data",
-                }
-            }
-        ).then((res) => console.log('sucess'))
-            .catch((err) => console.log('error'))
+        this.props.uploadRequest({ files, currentDirectory: this.props.currentDirectory})
+        this.props.getDirectory({ currentDirectory: this.props.currentDirectory})
     }
 
     private setUploadDialog(open: boolean) {
@@ -303,8 +297,22 @@ class NavBar extends Component<IProps, IState> {
     }
 }
 
-const NavBarWithTranslation = withTranslation()(NavBar)
+const NavBarWithTranslation = withTranslation()(NavBarComponent)
 
 const NavBarWithStyle = withStyles<any>(NavBarStyle, { withTheme: true })(NavBarWithTranslation)
 
-export default withRouter(NavBarWithStyle)
+const NavBarWithRouter = withRouter(NavBarWithStyle)
+
+const mapStateToProps = (state: ApplicationState) => ({
+    themeMode: state.layout.themeMode,
+    currentDirectory: state.directory.request.currentDirectory
+})
+
+const mapDispatchToProps = {
+    ...LayoutActions,
+    ...DirectoryActions
+}
+
+const NavBar: any = connect(mapStateToProps, mapDispatchToProps)(NavBarWithRouter)
+
+export default NavBar

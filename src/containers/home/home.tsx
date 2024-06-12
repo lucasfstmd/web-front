@@ -2,7 +2,14 @@ import React, { Component } from 'react'
 import { withTranslation, WithTranslation } from 'react-i18next'
 import { IActionsOpenSnackBar } from '../../store/snackbar'
 import { connect } from 'react-redux'
-import { Folder, Description, Search, Save, ArrowBack } from '@mui/icons-material'
+import {
+    Folder,
+    Description,
+    Search,
+    Save,
+    ArrowBack,
+    Download
+} from '@mui/icons-material'
 import './home.scss'
 import { createStyles, WithStyles, withStyles } from '@mui/styles'
 import {
@@ -10,12 +17,15 @@ import {
     FormControl,
     IconButton,
     InputAdornment,
-    InputLabel,
-    OutlinedInput, TextField,
-    Theme
+    InputLabel, ListItemIcon, ListItemText, Menu, MenuItem, MenuList,
+    OutlinedInput, Paper, TextField,
+    Theme,
 } from '@mui/material'
 import { IComponentRouter } from '../../components/with.router'
 import { LayoutActions } from '../../store/layout'
+import { ApplicationState } from '../../store/root.types'
+import { DirectoryActions } from '../../store/directory'
+import { IResponseDirectory } from '../../store/directory/types'
 import axiosInstance from '../../services/axios'
 
 const homeStyle = (theme: Theme) => createStyles({
@@ -25,7 +35,14 @@ const homeStyle = (theme: Theme) => createStyles({
 })
 
 interface IProps extends WithStyles<typeof homeStyle, true>  {
+    readonly directory: IResponseDirectory
+    readonly currentDirectory: string
+
     openSnackBar(data: IActionsOpenSnackBar): void
+
+    getDirectory(props: any): void
+
+    saveRequest(props: any): void
 }
 
 interface IState {
@@ -35,9 +52,8 @@ interface IState {
         readonly open: boolean
         readonly name: string
     }
-    readonly folders: any[]
-    readonly files: any[]
-    readonly currentDirectory: string
+    readonly anchorEl: null | HTMLElement
+    readonly currentDirectoryState: string
     readonly directoryStack: string[]
 }
 
@@ -54,43 +70,43 @@ class HomeComponent extends Component<IJoinProps, IState> {
                 open: false,
                 name: ''
             },
-            folders: [],
-            files: [],
-            currentDirectory: '666863849c214cfe65dd210d',
+            anchorEl: null,
+            currentDirectoryState: props.currentDirectory,
             directoryStack: []
         }
 
-        this.handleFolders = this.handleFolders.bind(this)
         this.handleSaveNewFolder = this.handleSaveNewFolder.bind(this)
         this.handleBack = this.handleBack.bind(this)
+        this.handleDownload = this.handleDownload.bind(this)
     }
 
     public componentDidMount() {
         const { t } = this.props
-        this.handleFolders(this.state.currentDirectory)
+        this.props.getDirectory({ currentDirectory: this.props.currentDirectory })
         document.title = `${t('HOME.HELMET')}`
     }
 
     public componentDidUpdate(prevProps: IJoinProps, prevState: IState) {
-        if (this.state.currentDirectory !== prevState.currentDirectory) {
-            this.handleFolders(this.state.currentDirectory)
+        if (this.state.currentDirectoryState !== prevState.currentDirectoryState) {
+            this.props.getDirectory({ currentDirectory: this.state.currentDirectoryState })
         }
     }
 
     public render() {
         const {
             theme,
-            classes
+            classes,
+            directory: { folders, files }
         } = this.props
 
         const {
             isFile,
             isFolder,
             newFolder,
-            folders,
-            files,
+            anchorEl
         } = this.state
 
+        const open = Boolean(anchorEl)
 
         return <React.Fragment>
             <div className="home">
@@ -122,10 +138,11 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                         label="Password"
                                     />
                                 </FormControl>
-                                <Box style={{
+                                <Box
+                                    display={'flex'}
+                                    alignItems={'center'}
+                                    style={{
                                     heigth: '10px',
-                                    display: 'flex',
-                                    alignItems: 'center'
                                 }}>
                                     <ButtonGroup color={'secondary'} variant="contained" aria-label="Basic button group">
                                         <Button
@@ -180,8 +197,8 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                                 key={folder.id}
                                                 className="item"
                                                 onDoubleClick={() => this.setState({
-                                                    directoryStack: [...this.state.directoryStack, this.state.currentDirectory],
-                                                    currentDirectory: `${folder.id}`
+                                                    directoryStack: [...this.state.directoryStack, this.state.currentDirectoryState],
+                                                    currentDirectoryState: `${folder.id}`
                                                 })}>
                                                 <Folder sx={{ fontSize: 60 }} style={{ color: theme.palette.secondary.main }}/>
                                                 <h1>{folder.name}</h1>
@@ -232,10 +249,37 @@ class HomeComponent extends Component<IJoinProps, IState> {
                             <div className="containerItem">
                                 {
                                     files?.map((fl) => (
-                                        <div key={fl._id} className="item" onClick={() => console.log('teste')}>
-                                            <Description sx={{ fontSize: 60 }} style={{ color: theme.palette.secondary.main }}/>
-                                            <h1>{fl.filename}</h1>
-                                        </div>
+                                        <>
+                                            <div
+                                                key={fl._id}
+                                                className="item"
+                                                onDoubleClick={(e) => this.setState({ anchorEl: e.currentTarget })}>
+                                                <Description sx={{ fontSize: 60 }} style={{ color: theme.palette.secondary.main }}/>
+                                                <h1>{fl.filename}</h1>
+                                            </div>
+                                            <Menu
+                                                id="basic-menu"
+                                                anchorEl={anchorEl}
+                                                open={open}
+                                                onClose={() => this.setState({ anchorEl: null })}
+                                                MenuListProps={{
+                                                    'aria-labelledby': 'basic-button',
+                                                }}
+                                            >
+                                                <Paper sx={{ width: 320, maxWidth: '100%' }}>
+                                                    <MenuList>
+                                                        <MenuItem
+                                                            onClick={this.handleDownload(fl._id)}
+                                                        >
+                                                            <ListItemIcon>
+                                                                <Download fontSize="small" />
+                                                            </ListItemIcon>
+                                                            <ListItemText>Baixar</ListItemText>
+                                                        </MenuItem>
+                                                    </MenuList>
+                                                </Paper>
+                                            </Menu>
+                                        </>
                                     ))
                                 }
                             </div>
@@ -246,30 +290,25 @@ class HomeComponent extends Component<IJoinProps, IState> {
         </React.Fragment>
     }
 
-    private handleFolders(directory: string) {
-        axiosInstance.get(`v1/directory/${directory}`)
-            .then((res) => {
-                this.setState({ folders: res.data })
-            })
-        axiosInstance.get(`v1/files/find/${directory}`)
-            .then((res) => {
-                this.setState({ files: res.data })
-            })
-    }
-
     private handleSaveNewFolder() {
-        axiosInstance.post(
-            `v1/directory/create/folder/${this.state.currentDirectory}/${this.state.newFolder.name}`
-        ).then(() => this.handleFolders(this.state.currentDirectory))
-        this.setState({ newFolder: { open: false } })
+        const { newFolder: { name } } = this.state
+        const { currentDirectory } = this.props
+        this.props.saveRequest({ nameNewDirectory: name, currentDirectory })
+        this.props.getDirectory({ currentDirectory })
     }
 
     private handleBack() {
         const { directoryStack } = this.state
         if (directoryStack.length > 0) {
             const previousDirectory = directoryStack.pop()
-            this.setState({ currentDirectory: previousDirectory, directoryStack })
+            this.setState({ currentDirectoryState: `${previousDirectory}`, directoryStack })
         }
+    }
+
+    private handleDownload(fileId: string) {
+        return axiosInstance
+            .get(`v1/files/download/${fileId}`)
+            .then((res) => res)
     }
 }
 
@@ -277,6 +316,17 @@ const HomeWithTranslation: any = withTranslation()(HomeComponent)
 
 const HomeWithStyle = withStyles<any>(homeStyle, { withTheme: true })(HomeWithTranslation)
 
-const Home: any = connect(undefined, LayoutActions)(HomeWithStyle)
+const mapStateToProps = (state: ApplicationState) => ({
+    themeMode: state.layout.themeMode,
+    directory: state.directory.request.directory,
+    currentDirectory: state.directory.request.currentDirectory,
+})
+
+const mapDispatchToProps = {
+    ...LayoutActions,
+    ...DirectoryActions
+}
+
+const Home: any = connect(mapStateToProps, mapDispatchToProps)(HomeWithStyle)
 
 export default Home
