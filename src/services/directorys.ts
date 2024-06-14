@@ -55,6 +55,18 @@ class DirectorysServices {
             }
         ).then((res: AxiosResponse) => res.data)
     }
+
+    public deleteFile(file_id: string): Promise<any> {
+        return axiosInstance.delete(
+            `${this.apiVersion}/files/${file_id}`
+        ).then((res: AxiosResponse) => res.data)
+    }
+
+    public deleteFoder(directory_id: string): Promise<any> {
+        return axiosInstance.delete(
+            `${this.apiVersion}/directory/${directory_id}`
+        ).then((res: AxiosResponse) => res.data)
+    }
 }
 
 const directoryService = new DirectorysServices()

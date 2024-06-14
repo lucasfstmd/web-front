@@ -2,20 +2,22 @@ import { AsyncStateStatus } from '../root.types'
 
 export enum Types {
     GET_DIRECTORY_REQUEST = '@directory/getDirectory',
-    GET_DIRECTORY_SUCCESS = '@directory/getSuccess',
-    GET_DIRECTORY_FAILIRE = '@directory/getFailure',
     SAVE_FOLDER_REQUEST = '@directory/saveRequest',
-    SAVE_FOLDER_SUCCESS = '@directory/saveSuccess',
-    SAVE_FOLDER_FAILURE = '@directory/saveFailure',
     UPLOAD_FILE_REQUEST = '@directory/uploadRequest',
-    UPLOAD_FILE_SUCCESS = '@directory/uploadSuccess',
-    UPLOAD_FILE_FAILURE = '@directory/uploadFailure',
+    DELETE_REQUEST = '@directory/deleteRequest',
 }
 
 export interface IAction {
     readonly currentDirectory?: string
     readonly nameNewDirectory?: string
     readonly files?: FormData
+    readonly id?: string
+    readonly deleteType: DeleteType
+}
+
+export enum DeleteType {
+    FOLDER = 'folder',
+    FILE = 'file',
 }
 
 export interface IResponseDirectory {
@@ -29,16 +31,13 @@ export interface IStateRequest {
     readonly directory: IResponseDirectory
 }
 
-export interface IStateNewFolder {
-    readonly status: AsyncStateStatus
-}
-
-export interface IStateUpload {
+export interface IState {
     readonly status: AsyncStateStatus
 }
 
 export interface DirectoryState {
     request: IStateRequest
-    save: IStateNewFolder
-    upload: IStateUpload
+    save: IState
+    upload: IState
+    delete: IState
 }

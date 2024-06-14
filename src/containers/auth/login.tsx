@@ -12,6 +12,7 @@ import {
     Input,
     InputAdornment,
     InputLabel,
+    Paper,
     Theme
 } from '@mui/material'
 import { createStyles, WithStyles, withStyles } from '@mui/styles'
@@ -31,11 +32,13 @@ import Footer from '../../components/layout/footer'
 import authService from '../../services/auth'
 import Redirect from '../../components/redirect'
 
+import Logo from '../../assets/imgs/logo.svg'
+
 const FormErrorMessage = lazy(() => import('../../components/form.error'))
 
 const Style = (theme: Theme) => createStyles({
     formControl: {
-        width: '100%'
+        width: '100%',
     },
     error: {
         color: theme.palette.error.main
@@ -194,126 +197,145 @@ class Login extends Component<JoinProps, State> {
                     <ThemeButton color={theme.palette.primary.main}/>
                 </Box>
 
-                <Box pt={1} pl={3} pr={3} maxWidth={350}>
+                <Paper style={{
+                    padding: '10px',
+                    paddingBottom: '15px'
+                }}>
+                    <Box pt={1} pl={3} pr={3} maxWidth={350}>
 
-                    <Formik
-                        initialValues={{ login, password }}
-                        onSubmit={this.handleSubmit}
-                        validationSchema={LoginValidator.validationScheme}
-                        validateOnMount={true}
-                        enableReinitialize={true}>
-                        {({
+                        <Box
+                            display={'flex'}
+                            justifyContent={'center'}
+                            p={1}
+                        >
+                            <img src={Logo} alt="Logo login"/>
+                        </Box>
 
-                              values,
-                              isValid,
-                              errors,
-                              touched,
-                              setFieldValue,
-                              setFieldTouched
-                          }) => (
-                            <Form id="form_login">
-                                <Field id="username" name="username" type="customField">
-                                    {() => (
-                                        <Box display="flex" justifyContent="center">
-                                            <FormControl
-                                                className={classes.formControl}
-                                                error={!!errors.login && !!touched.login}>
-                                                <InputLabel htmlFor="inp_username">
-                                                    {t('AUTH.LOGIN.LOGIN')}
-                                                </InputLabel>
-                                                <Input
-                                                    id="inp_username"
-                                                    name="username"
-                                                    type="text"
-                                                    fullWidth={true}
-                                                    autoFocus={true}
-                                                    value={values?.login || ''}
-                                                    onChange={
-                                                        (e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-                                                            setFieldValue('login', e.target.value)
-                                                                .then()
+                        <Formik
+                            initialValues={{ login, password }}
+                            onSubmit={this.handleSubmit}
+                            validationSchema={LoginValidator.validationScheme}
+                            validateOnMount={true}
+                            enableReinitialize={true}>
+                            {({
+
+                                  values,
+                                  isValid,
+                                  errors,
+                                  touched,
+                                  setFieldValue,
+                                  setFieldTouched
+                              }) => (
+                                <Form id="form_login">
+                                    <Field id="username" name="username" type="customField">
+                                        {() => (
+                                            <Box display="flex" justifyContent="center">
+                                                <FormControl
+                                                    className={classes.formControl}
+                                                    error={!!errors.login && !!touched.login}
+                                                    color={'success'}
+                                                >
+                                                    <InputLabel htmlFor="inp_username">
+                                                        {t('AUTH.LOGIN.LOGIN')}
+                                                    </InputLabel>
+                                                    <Input
+                                                        id="inp_username"
+                                                        name="username"
+                                                        type="text"
+                                                        fullWidth={true}
+                                                        autoFocus={true}
+                                                        value={values?.login || ''}
+                                                        onChange={
+                                                            (e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+                                                                setFieldValue('login', e.target.value)
+                                                                    .then()
+                                                            }
                                                         }
-                                                    }
-                                                    onBlur={() => setFieldTouched('login', true, true)}
-                                                />
-                                                <FormErrorMessage name="login"/>
-                                            </FormControl>
-                                        </Box>
-                                    )}
-                                </Field>
+                                                        onBlur={() => setFieldTouched('login', true, true)}
+                                                    />
+                                                    <FormErrorMessage name="login"/>
+                                                </FormControl>
+                                            </Box>
+                                        )}
+                                    </Field>
 
-                                <Field id="password" name="password" type="customField">
-                                    {() => (
-                                        <Box display="flex" justifyContent="center">
-                                            <FormControl
-                                                className={classes.formControl}
-                                                error={!!errors.password && !!touched.password}>
-                                                <InputLabel htmlFor="inp_password">
-                                                    {t('AUTH.LOGIN.PASSWORD')}
-                                                </InputLabel>
-                                                <Input
-                                                    id="inp_password"
-                                                    name="password"
-                                                    value={values?.password || ''}
-                                                    type={showPassword ? 'text' : 'password'}
-                                                    fullWidth={true}
-                                                    className={
-                                                        !!errors.password && !!touched.password ?
-                                                            classes.error
-                                                            : ''
-                                                    }
-                                                    endAdornment={
-                                                        <InputAdornment position="end">
-                                                            <IconButton
-                                                                color="inherit"
-                                                                aria-label="toggle password visibility"
-                                                                onClick={() => this.changePasswordVisibility(true)}
-                                                                onMouseDown={() => this.changePasswordVisibility(false)}>
-                                                                {showPassword ? <Visibility/> : <VisibilityOff/>}
-                                                            </IconButton>
-                                                        </InputAdornment>
-                                                    }
-                                                    onChange={
-                                                        (e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
-                                                            setFieldValue('password', e.target.value)
+                                    <Field id="password" name="password" type="customField">
+                                        {() => (
+                                            <Box display="flex" justifyContent="center">
+                                                <FormControl
+                                                    className={classes.formControl}
+                                                    error={!!errors.password && !!touched.password}>
+                                                    <InputLabel htmlFor="inp_password">
+                                                        {t('AUTH.LOGIN.PASSWORD')}
+                                                    </InputLabel>
+                                                    <Input
+                                                        id="inp_password"
+                                                        name="password"
+                                                        value={values?.password || ''}
+                                                        type={showPassword ? 'text' : 'password'}
+                                                        fullWidth={true}
+                                                        className={
+                                                            !!errors.password && !!touched.password ?
+                                                                classes.error
+                                                                : ''
                                                         }
-                                                    }
-                                                    onBlur={() => setFieldTouched('password', true, true)}
-                                                />
-                                                <FormErrorMessage name="password"/>
-                                            </FormControl>
-                                        </Box>
-                                    )}
-                                </Field>
+                                                        endAdornment={
+                                                            <InputAdornment position="end">
+                                                                <IconButton
+                                                                    color="inherit"
+                                                                    aria-label="toggle password visibility"
+                                                                    onClick={() => this.changePasswordVisibility(true)}
+                                                                    onMouseDown={() => this.changePasswordVisibility(false)}>
+                                                                    {showPassword ? <Visibility/> : <VisibilityOff/>}
+                                                                </IconButton>
+                                                            </InputAdornment>
+                                                        }
+                                                        onChange={
+                                                            (e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+                                                                setFieldValue('password', e.target.value)
+                                                            }
+                                                        }
+                                                        onBlur={() => setFieldTouched('password', true, true)}
+                                                    />
+                                                    <FormErrorMessage name="password"/>
+                                                </FormControl>
+                                            </Box>
+                                        )}
+                                    </Field>
 
-                                <Box display="flex" justifyContent="center">
-                                    <FormControl className={classes.formControl}>
-                                        <Button
-                                            id="btn_enter"
-                                            type="submit"
-                                            variant="contained"
-                                            size="medium"
-                                            color="primary"
-                                            disabled={!isValid || loading}>
-                                            {t('AUTH.LOGIN.ENTER')}
-                                        </Button>
+                                    <Box display="flex" justifyContent="center">
+                                        <FormControl className={classes.formControl}>
+                                            <Button
+                                                id="btn_enter"
+                                                type="submit"
+                                                variant="contained"
+                                                size="medium"
+                                                style={{
+                                                    backgroundColor: theme.palette.primary.background,
+                                                    color: theme.palette.primary.main
+                                                }}
+                                                disabled={!isValid || loading}>
+                                                {t('AUTH.LOGIN.ENTER')}
+                                            </Button>
 
-                                        {
-                                            loading &&
-                                            <CircularProgress
-                                                id="loading_enter"
-                                                size={24}
-                                                className={classes.buttonProgress}/>
-                                        }
+                                            {
+                                                loading &&
+                                                <CircularProgress
+                                                    id="loading_enter"
+                                                    size={24}
+                                                    className={classes.buttonProgress}/>
+                                            }
 
-                                    </FormControl>
-                                </Box>
+                                        </FormControl>
+                                    </Box>
 
-                            </Form>
-                        )}
-                    </Formik>
+                                </Form>
+                            )}
+                        </Formik>
 
-                </Box>
+                    </Box>
+                </Paper>
+
 
                 <Footer/>
 
@@ -332,7 +354,7 @@ class Login extends Component<JoinProps, State> {
             login,
             password
         })
-        // this.props.loginRequest(credentials)
+        this.props.loginRequest(credentials)
         this.props.navigate('/app/home')
     }
 }

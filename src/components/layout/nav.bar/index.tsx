@@ -13,7 +13,7 @@ import {
     Typography
 } from '@mui/material'
 import { createStyles, WithStyles, withStyles } from '@mui/styles'
-import { Delete, DriveFolderUpload, AccountCircle } from '@mui/icons-material'
+import { DriveFolderUpload, AccountCircle } from '@mui/icons-material'
 import { ThemeMode } from '../../../material.theme'
 
 import { IComponentRouter, withRouter } from '../../with.router'
@@ -231,7 +231,7 @@ class NavBarComponent extends Component<IProps, IState> {
                         </Box>
                     </Link>
 
-                    <Link to={'/app/home'} style={{ textDecoration: 'none' }} className={classes.listItemButton}>
+                    <Link to={'/app/profile'} style={{ textDecoration: 'none' }} className={classes.listItemButton}>
                         <Box display={'flex'} justifyContent={'center'} flexDirection={'column'} alignItems={'center'}>
                             <AccountCircle sx={{ fontSize: 80 }} style={{ color: theme.palette.secondary.main }}/>
                             <Typography variant={'h5'} style={{ color: theme.palette.secondary.main }}>
@@ -240,14 +240,6 @@ class NavBarComponent extends Component<IProps, IState> {
                         </Box>
                     </Link>
 
-                    <Link to={'/app/home'} style={{ textDecoration: 'none' }} className={classes.listItemButton}>
-                        <Box display={'flex'} justifyContent={'center'} flexDirection={'column'} alignItems={'center'}>
-                            <Delete sx={{ fontSize: 80 }} style={{ color: theme.palette.red.main }}/>
-                            <Typography variant={'h5'} style={{ color: theme.palette.red.main }}>
-                                Lixeira
-                            </Typography>
-                        </Box>
-                    </Link>
                 </List>
             </Box>
         )
@@ -267,7 +259,6 @@ class NavBarComponent extends Component<IProps, IState> {
                     onChange={(e: any, newValue: string) => navigate(`/app/${newValue}`)}>
                     <BottomNavigationAction value="home" icon={<DriveFolderUpload/>}/>
                     <BottomNavigationAction value="menu1" icon={<AccountCircle/>}/>
-                    <BottomNavigationAction value="menu2" icon={<Delete/>}/>
                 </BottomNavigation>
             </Box>
 
@@ -289,7 +280,6 @@ class NavBarComponent extends Component<IProps, IState> {
 
     private handleSubmit(files: any) {
         this.props.uploadRequest({ files, currentDirectory: this.props.currentDirectory})
-        this.props.getDirectory({ currentDirectory: this.props.currentDirectory})
     }
 
     private setUploadDialog(open: boolean) {

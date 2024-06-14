@@ -30,7 +30,7 @@ const LayoutRouter: RouteObject[] = [
                 element: <Home/>
             },
             {
-                path: '/app/menu1',
+                path: '/app/profile',
                 element: <Menu1/>
             },
             {

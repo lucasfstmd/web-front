@@ -8,7 +8,9 @@ import {
     Search,
     Save,
     ArrowBack,
-    Download
+    Download,
+    Delete,
+    FileOpen
 } from '@mui/icons-material'
 import './home.scss'
 import { createStyles, WithStyles, withStyles } from '@mui/styles'
@@ -25,8 +27,8 @@ import { IComponentRouter } from '../../components/with.router'
 import { LayoutActions } from '../../store/layout'
 import { ApplicationState } from '../../store/root.types'
 import { DirectoryActions } from '../../store/directory'
-import { IResponseDirectory } from '../../store/directory/types'
-import axiosInstance from '../../services/axios'
+import { DeleteType, IResponseDirectory } from '../../store/directory/types'
+import { Link } from 'react-router-dom'
 
 const homeStyle = (theme: Theme) => createStyles({
     buttonUpload: {
@@ -43,6 +45,8 @@ interface IProps extends WithStyles<typeof homeStyle, true>  {
     getDirectory(props: any): void
 
     saveRequest(props: any): void
+
+    deleteRequest(props: any): void
 }
 
 interface IState {
@@ -52,7 +56,8 @@ interface IState {
         readonly open: boolean
         readonly name: string
     }
-    readonly anchorEl: null | HTMLElement
+    readonly anchorElFolder: null | HTMLElement
+    readonly anchorElFile: null | HTMLElement
     readonly currentDirectoryState: string
     readonly directoryStack: string[]
 }
@@ -70,14 +75,16 @@ class HomeComponent extends Component<IJoinProps, IState> {
                 open: false,
                 name: ''
             },
-            anchorEl: null,
+            anchorElFolder: null,
+            anchorElFile: null,
             currentDirectoryState: props.currentDirectory,
             directoryStack: []
         }
 
         this.handleSaveNewFolder = this.handleSaveNewFolder.bind(this)
         this.handleBack = this.handleBack.bind(this)
-        this.handleDownload = this.handleDownload.bind(this)
+        this.handleDeleteFile = this.handleDeleteFile.bind(this)
+        this.handleDeleteFolder = this.handleDeleteFolder.bind(this)
     }
 
     public componentDidMount() {
@@ -103,10 +110,12 @@ class HomeComponent extends Component<IJoinProps, IState> {
             isFile,
             isFolder,
             newFolder,
-            anchorEl
+            anchorElFile,
+            anchorElFolder
         } = this.state
 
-        const open = Boolean(anchorEl)
+        const openFile = Boolean(anchorElFile)
+        const openFolder = Boolean(anchorElFolder)
 
         return <React.Fragment>
             <div className="home">
@@ -142,8 +151,8 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                     display={'flex'}
                                     alignItems={'center'}
                                     style={{
-                                    heigth: '10px',
-                                }}>
+                                        heigth: '10px',
+                                    }}>
                                     <ButtonGroup color={'secondary'} variant="contained" aria-label="Basic button group">
                                         <Button
                                             variant={ (isFolder) ? 'contained' : 'outlined' }
@@ -178,7 +187,10 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                 className={classes.buttonUpload}
                                 startIcon={<Folder/>}
                                 onClick={() => this.setState({
-                                    newFolder: { open: true }
+                                    newFolder: {
+                                        name: '',
+                                        open: true
+                                    }
                                 })}
                             >
                                 Nova Pasta
@@ -193,17 +205,51 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                 {
                                     folders.map((folder) => (
                                         <>
-                                            <div
-                                                key={folder.id}
-                                                className="item"
-                                                onDoubleClick={() => this.setState({
-                                                    directoryStack: [...this.state.directoryStack, this.state.currentDirectoryState],
-                                                    currentDirectoryState: `${folder.id}`
-                                                })}>
-                                                <Folder sx={{ fontSize: 60 }} style={{ color: theme.palette.secondary.main }}/>
-                                                <h1>{folder.name}</h1>
-                                            </div>
-                                        </>
+                                        <div
+                                            key={folder.id}
+                                            className="item"
+                                            onDoubleClick={(e) => this.setState({ anchorElFolder: e.currentTarget })}>
+                                            <Folder sx={{ fontSize: 60 }} style={{ color: theme.palette.secondary.main }}/>
+                                            <h1>{folder.name}</h1>
+                                        </div>
+                                        <Menu
+                                            id="basic-menu"
+                                            anchorEl={anchorElFolder}
+                                            open={openFolder}
+                                            onClose={() => this.setState({ anchorElFolder: null })}
+                                            MenuListProps={{
+                                                'aria-labelledby': 'basic-button',
+                                            }}
+                                        >
+                                            <Paper sx={{ width: 320, maxWidth: '100%' }}>
+                                                <MenuList>
+                                                    <MenuItem
+                                                        onClick={() => this.setState({
+                                                            directoryStack: [...this.state.directoryStack, this.state.currentDirectoryState],
+                                                            currentDirectoryState: `${folder.id}`,
+                                                            anchorElFolder: null
+                                                        })}
+                                                    >
+                                                        <ListItemIcon>
+                                                            <FileOpen fontSize="small" />
+                                                        </ListItemIcon>
+                                                        <ListItemText>Abrir</ListItemText>
+                                                    </MenuItem>
+                                                    <MenuItem
+                                                        onClick={() => {
+                                                            this.handleDeleteFolder(folder.id)
+                                                            this.setState({ anchorElFolder: null })
+                                                        }}
+                                                    >
+                                                        <ListItemIcon>
+                                                            <Delete fontSize="small" />
+                                                        </ListItemIcon>
+                                                        <ListItemText>Deletar</ListItemText>
+                                                    </MenuItem>
+                                                </MenuList>
+                                            </Paper>
+                                        </Menu>
+                                    </>
                                     ))
                                 }
                                 {
@@ -253,28 +299,46 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                             <div
                                                 key={fl._id}
                                                 className="item"
-                                                onDoubleClick={(e) => this.setState({ anchorEl: e.currentTarget })}>
+                                                onDoubleClick={(e) => this.setState({ anchorElFile: e.currentTarget })}>
                                                 <Description sx={{ fontSize: 60 }} style={{ color: theme.palette.secondary.main }}/>
                                                 <h1>{fl.filename}</h1>
                                             </div>
                                             <Menu
                                                 id="basic-menu"
-                                                anchorEl={anchorEl}
-                                                open={open}
-                                                onClose={() => this.setState({ anchorEl: null })}
+                                                anchorEl={anchorElFile}
+                                                open={openFile}
+                                                onClose={() => this.setState({ anchorElFile: null })}
                                                 MenuListProps={{
                                                     'aria-labelledby': 'basic-button',
                                                 }}
                                             >
                                                 <Paper sx={{ width: 320, maxWidth: '100%' }}>
                                                     <MenuList>
+                                                        <Link
+                                                            to={`${process.env.REACT_APP_API_GATEWAY}/v1/files/download/${fl._id}`}
+                                                            target='_blank'
+                                                            style={{
+                                                                textDecoration: 'none',
+                                                                color: 'black'
+                                                            }}
+                                                        >
+                                                            <MenuItem>
+                                                                <ListItemIcon>
+                                                                    <Download fontSize="small"/>
+                                                                </ListItemIcon>
+                                                                <ListItemText>Baixar</ListItemText>
+                                                            </MenuItem>
+                                                        </Link>
                                                         <MenuItem
-                                                            onClick={this.handleDownload(fl._id)}
+                                                            onClick={() => {
+                                                                this.handleDeleteFile(fl._id)
+                                                                this.setState({ anchorElFile: null })
+                                                            }}
                                                         >
                                                             <ListItemIcon>
-                                                                <Download fontSize="small" />
+                                                                <Delete fontSize="small" />
                                                             </ListItemIcon>
-                                                            <ListItemText>Baixar</ListItemText>
+                                                            <ListItemText>Deletar</ListItemText>
                                                         </MenuItem>
                                                     </MenuList>
                                                 </Paper>
@@ -293,8 +357,11 @@ class HomeComponent extends Component<IJoinProps, IState> {
     private handleSaveNewFolder() {
         const { newFolder: { name } } = this.state
         const { currentDirectory } = this.props
+        this.setState({ newFolder: {
+                name: '',
+                open: false
+            } })
         this.props.saveRequest({ nameNewDirectory: name, currentDirectory })
-        this.props.getDirectory({ currentDirectory })
     }
 
     private handleBack() {
@@ -305,10 +372,14 @@ class HomeComponent extends Component<IJoinProps, IState> {
         }
     }
 
-    private handleDownload(fileId: string) {
-        return axiosInstance
-            .get(`v1/files/download/${fileId}`)
-            .then((res) => res)
+    private handleDeleteFolder(directory_id: string) {
+        const { currentDirectory } = this.props
+        this.props.deleteRequest({ id: directory_id, currentDirectory, deleteType: DeleteType.FOLDER  })
+    }
+
+    private handleDeleteFile(file_id: string) {
+        const { currentDirectory } = this.props
+        this.props.deleteRequest({ id: file_id, currentDirectory, deleteType: DeleteType.FILE  })
     }
 }
 

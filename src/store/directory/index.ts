@@ -16,6 +16,9 @@ const initialState: DirectoryState = {
     },
     upload: {
         status: AsyncStateStatus.INITIAL,
+    },
+    delete: {
+        status: AsyncStateStatus.INITIAL
     }
 }
 
@@ -29,7 +32,6 @@ export const directorySlice = createSlice({
         getSuccess: (state: Draft<DirectoryState>, action: PayloadAction<{ data: any }>) => {
             state.request.status = AsyncStateStatus.SUCCESS
             state.request.currentDirectory = action.payload.data.currentDirectory
-            console.log(action.payload)
             state.request.directory = action.payload.data.directory
         },
         getFailure: (state: Draft<DirectoryState>) => {
@@ -52,7 +54,16 @@ export const directorySlice = createSlice({
         },
         uploadFailure: (state: Draft<DirectoryState>) => {
             state.upload.status = AsyncStateStatus.FAILURE
-        }
+        },
+        deleteRequest: (state: Draft<DirectoryState>) => {
+            state.delete.status = AsyncStateStatus.LOADING
+        },
+        deleteSuccess: (state: Draft<DirectoryState>) => {
+            state.delete.status = AsyncStateStatus.SUCCESS
+        },
+        deleteFailure: (state: Draft<DirectoryState>) => {
+            state.delete.status = AsyncStateStatus.FAILURE
+        },
     }
 })
 
