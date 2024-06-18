@@ -262,7 +262,7 @@ class AppBarComponent extends Component<IProps, IState> {
      * @returns {void} void
      */
     private profile(): void {
-        this.props.navigate(`/app/myprofile`)
+        this.props.navigate(`/app/profile`)
     }
 
 }

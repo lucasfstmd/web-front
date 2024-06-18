@@ -9,7 +9,7 @@ class App extends Component {
         const primaryColor: string = CONFIG_THEME?.light?.palette?.primary?.main || '#000000'
         const commonStyle = 'font-weight: bold;font-style: italic;font-style: italic;'
         const style1 = `${commonStyle};font-size: 40px;color: ${primaryColor};`
-        console.log(`%cTEMPLATE WEB-APP`, style1)
+        console.log(`%cNicDrive`, style1)
         return <Provider store={store}>
             <ThemeProvider/>
         </Provider>

@@ -50,6 +50,7 @@ interface IProps extends WithStyles<typeof homeStyle, true>  {
 }
 
 interface IState {
+    readonly search: string
     readonly isFolder: boolean
     readonly isFile: boolean
     readonly newFolder: {
@@ -69,6 +70,7 @@ class HomeComponent extends Component<IJoinProps, IState> {
         super(props)
 
         this.state = {
+            search: '',
             isFolder: true,
             isFile: true,
             newFolder: {
@@ -103,7 +105,7 @@ class HomeComponent extends Component<IJoinProps, IState> {
         const {
             theme,
             classes,
-            directory: { folders, files }
+            directory
         } = this.props
 
         const {
@@ -111,11 +113,16 @@ class HomeComponent extends Component<IJoinProps, IState> {
             isFolder,
             newFolder,
             anchorElFile,
-            anchorElFolder
+            anchorElFolder,
+            search
         } = this.state
 
         const openFile = Boolean(anchorElFile)
         const openFolder = Boolean(anchorElFolder)
+
+        const files: Array<any> = directory.files.filter(f => f.filename.includes(search))
+        const folders: Array<any> = directory.folders.filter(f => f.name.includes(search))
+
 
         return <React.Fragment>
             <div className="home">
@@ -133,6 +140,9 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                 <FormControl sx={{ m: 1, width: '100%' }} variant="outlined">
                                     <InputLabel htmlFor="outlined-adornment-password">Pesquisar</InputLabel>
                                     <OutlinedInput
+                                        onChange={(e) => this.setState({
+                                            search: e.target.value
+                                        })}
                                         id="outlined-adornment-password"
                                         endAdornment={
                                             <InputAdornment position="start">
@@ -199,7 +209,7 @@ class HomeComponent extends Component<IJoinProps, IState> {
                     </Box>
                 </div>
                 {
-                    isFolder && (
+                   isFolder && (
                         <div className="card-body">
                             <div className="containerItem">
                                 {
@@ -235,11 +245,10 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                                         </ListItemIcon>
                                                         <ListItemText>Abrir</ListItemText>
                                                     </MenuItem>
+                                                </MenuList>
+                                                <MenuList>
                                                     <MenuItem
-                                                        onClick={() => {
-                                                            this.handleDeleteFolder(folder.id)
-                                                            this.setState({ anchorElFolder: null })
-                                                        }}
+                                                        onClick={() => this.handleDeleteFolder(folder.id)}
                                                     >
                                                         <ListItemIcon>
                                                             <Delete fontSize="small" />
@@ -290,7 +299,7 @@ class HomeComponent extends Component<IJoinProps, IState> {
                     )
                 }
                 {
-                    isFile && (
+                    isFile && files.length !== 0 && (
                         <div className="card-body">
                             <div className="containerItem">
                                 {
@@ -329,17 +338,6 @@ class HomeComponent extends Component<IJoinProps, IState> {
                                                                 <ListItemText>Baixar</ListItemText>
                                                             </MenuItem>
                                                         </Link>
-                                                        <MenuItem
-                                                            onClick={() => {
-                                                                this.handleDeleteFile(fl._id)
-                                                                this.setState({ anchorElFile: null })
-                                                            }}
-                                                        >
-                                                            <ListItemIcon>
-                                                                <Delete fontSize="small" />
-                                                            </ListItemIcon>
-                                                            <ListItemText>Deletar</ListItemText>
-                                                        </MenuItem>
                                                     </MenuList>
                                                 </Paper>
                                             </Menu>
